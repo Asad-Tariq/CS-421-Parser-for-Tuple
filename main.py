@@ -1,6 +1,6 @@
 import os
 from lexer import *
-from parser import *
+from rd_parser import *
 from typing import List, Dict, Tuple
 
 
@@ -208,7 +208,7 @@ def main() -> None:
 
     # remove all unrequired tokens by the parser
     token_list = [token for token in token_list if token not in unwanted_tokens]
-
+    print(token_list)
     # pass the token list to the parser
     parser = Parser(token_list, symbol_table)
     

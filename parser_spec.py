@@ -1,3 +1,5 @@
+# the grammar specification for TUPLE
+
 firstSet = {"program":{"<dt"},
         "paramList":{"<dt"},
         "pList":{",>", "epsilon"},
