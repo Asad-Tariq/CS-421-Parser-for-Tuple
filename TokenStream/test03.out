@@ -1,1 +1,3 @@
-<dt, int><blank><id, 1><blank><punctuator, (><dt, float><blank><id, 2><punctuator, ,><blank><dt, int><blank><id, 3><punctuator, ;><punctuator, )><blank><punctuator, {><punctuator, }>
+<dt, int><blank><id, 1><blank><punctuator, (><dt, float><blank><id, 2><punctuator, ,><blank><dt, int><blank><id, 3><punctuator, ;><char_constant, '><blank><punctuator, {><newline>
+<blank><blank><blank><blank><keyword, return><blank><id, 2><blank><+><blank><id, 3><punctuator, ;><punctuator, ;><newline>
+<punctuator, }>

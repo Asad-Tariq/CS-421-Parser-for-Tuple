@@ -26,6 +26,8 @@ class Parser:
         self.current_token = self.token_list[self.token_index]
         self.current_function = ""
         self.parser_trace = []
+        self.error_stream = {}
+        self.line_count = 0
 
     def __checkToken(self) -> List[str]:
         """Returns the lexical unit and attribute of the current token.
@@ -84,8 +86,48 @@ class Parser:
 
         tok = self.__checkToken()
         peek_tok = self.__peekToken()
+        tok, peek_tok = self.__skipNewLine(tok, peek_tok)
+
         return tok, peek_tok
 
+    def __skipNewLine(self, tok, peek_tok) -> Tuple[List[str], str]:
+        """Skips the new line token.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
+        if tok[0] == "<newline>":
+            self.__nextToken()
+            tok, peek_tok = self.__updateTokens()
+            self.line_count += 1
+        
+        return tok, peek_tok
+    
+    def __recordingErrors(self, tok, peek_tok) -> Tuple[List[str], str]:
+        """Records the error and returns the next token.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
+        self.parser_trace.append("Parsing Error!")
+        error = "Token " + tok[0] + tok[1] + " not expected in program"
+        try:
+            self.error_stream[self.line_count].append(error)
+        except KeyError:
+            self.error_stream[self.line_count] = [error]
+        self.__nextToken()
+        tok, peek_tok = self.__updateTokens()
+
+        return tok, peek_tok
+    
     def __program(self) -> None:
         """The production rules for the 'Program' non-terminal.
 
@@ -98,6 +140,7 @@ class Parser:
 
         print("IN PROGRAM")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["program"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
@@ -142,8 +185,8 @@ class Parser:
             self.parser_trace.append("EOF")
             return
 
-        if tok[0] not in firstSet["program"] or tok[1] not in firstSet["program"]:
-            self.parser_trace.append("Parsing Error!")
+        elif tok[0] not in firstSet["program"] or tok[1] not in firstSet["program"]:
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __paramList(self) -> None:
@@ -158,6 +201,7 @@ class Parser:
 
         print("IN PARAMLIST")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["paramList"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
@@ -176,7 +220,7 @@ class Parser:
             return 
 
         if tok[0] not in firstSet["paramList"] and tok[1] not in firstSet["paramList"]:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __pList(self) -> None:
@@ -191,6 +235,7 @@ class Parser:
 
         print("IN PLIST")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["pList"]:
             if tok[1] == ",>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -207,11 +252,12 @@ class Parser:
             if tok[1] in firstSet["pList"]:
                 self.__pList()
         
-        elif tok[1] in followSet["pList"]:
+        if tok[1] in followSet["pList"]:
+            print("here")
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __stmts(self) -> None:
@@ -226,6 +272,7 @@ class Parser:
 
         print("IN STMTS")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
             if tok[0] in firstSet["stmtsPrime"] or tok[1] in firstSet["stmtsPrime"]:
                 self.__stmtsPrime()
@@ -247,7 +294,7 @@ class Parser:
             tok, peek_tok = self.__updateTokens()
         
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __stmtsPrime(self) -> None:
@@ -262,6 +309,7 @@ class Parser:
 
         print("IN STMTSPRIME")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["stmtsPrime"] or tok[1] in firstSet["stmtsPrime"]:
             if tok[0] in firstSet["decStmts"]:
                 self.__decStmt()
@@ -290,7 +338,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __decStmt(self) -> None:
@@ -305,6 +353,7 @@ class Parser:
 
         print("IN DECSTMT")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["decStmts"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
@@ -318,16 +367,22 @@ class Parser:
                 self.__optionalAssign()
                 print("IN DECSTMT")
                 tok, peek_tok = self.__updateTokens()
-            if tok[1] in firstSet["list"]:
-                self.__list()
-                print("IN DECSTMT")
-                tok, peek_tok = self.__updateTokens()
+            if len(tok) == 1:
+                if tok[0] in firstSet["list"]:
+                    self.__list()
+                    print("IN DECSTMT")
+                    tok, peek_tok = self.__updateTokens()
+            if len(tok) == 2:
+                if tok[1] in firstSet["list"]:
+                    self.__list()
+                    print("IN DECSTMT")
+                    tok, peek_tok = self.__updateTokens()
 
         elif tok[0] in followSet["decStmts"] or tok[1] in followSet["decStmts"]:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __list(self) -> None:
@@ -342,6 +397,7 @@ class Parser:
 
         print("IN LIST")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["list"]:
             if tok[1] == ",>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -367,7 +423,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __optionalAssign(self) -> None:
@@ -382,6 +438,7 @@ class Parser:
 
         print("IN OPTIONALASSIGN")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["optionalAssign"]:
             self.parser_trace.append("matched <" + tok[1])
             self.__nextToken()
@@ -390,10 +447,16 @@ class Parser:
                 self.__expr()
                 print("IN OPTIONALASSIGN")
                 tok, peek_tok = self.__updateTokens()
-            if tok[1] == ";>":
-                self.parser_trace.append("matched <" + tok[1])
-                self.__nextToken()
-                tok, peek_tok = self.__updateTokens()
+            if len(tok) == 1:
+                if tok[0] == ";>":
+                    self.parser_trace.append("matched <" + tok[1])
+                    self.__nextToken()
+                    tok, peek_tok = self.__updateTokens()
+            elif len(tok) == 2:
+                if tok[1] == ";>":
+                    self.parser_trace.append("matched <" + tok[1])
+                    self.__nextToken()
+                    tok, peek_tok = self.__updateTokens()
             else:
                 return
         
@@ -404,7 +467,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __assignStmt(self) -> None:
@@ -419,6 +482,7 @@ class Parser:
 
         print("IN ASSIGNSTMT")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["assignStmt"]:
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
@@ -442,7 +506,7 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __expr(self) -> None:
@@ -457,6 +521,7 @@ class Parser:
 
         print("IN EXPR")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
             if tok[0] in firstSet["t"] or tok[1] in firstSet["t"]:
                 self.__t()
@@ -475,7 +540,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __ePrime(self) -> None:
@@ -490,6 +555,7 @@ class Parser:
 
         print("IN EPRIME")
         tok, peek_tok = self.__updateTokens()
+
         if len(tok) == 1:
             if tok[0][1:] in firstSet["ePrime"]:
                 if tok[0][1:] == "+>":
@@ -500,9 +566,14 @@ class Parser:
                     self.__t()
                     print("IN EPRIME")
                     tok, peek_tok = self.__updateTokens()
-                if tok[1] in firstSet["ePrime"]:
-                    self.__ePrime()
-                    tok, peek_tok = self.__updateTokens()
+                if len(tok) == 1:
+                    if tok[0] in firstSet["ePrime"]:
+                        self.__ePrime()
+                        tok, peek_tok = self.__updateTokens()
+                if len(tok) == 2:
+                    if tok[1] in firstSet["ePrime"]:
+                        self.__ePrime()
+                        tok, peek_tok = self.__updateTokens()
                 else:
                     return
 
@@ -524,11 +595,8 @@ class Parser:
         elif tok[0][1:] in followSet["ePrime"]:
             return
 
-        elif tok[1] in followSet["ePrime"]:
-            return
-
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __t(self) -> None:
@@ -543,6 +611,7 @@ class Parser:
 
         print("IN T")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["t"] or tok[1] in firstSet["t"]:
             if tok[0] in firstSet["f"] or tok[1] in firstSet["f"]:
                 self.__f()
@@ -566,7 +635,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __tPrime(self) -> None:
@@ -581,6 +650,7 @@ class Parser:
 
         print("IN TPRIME")
         tok, peek_tok = self.__updateTokens()
+
         if len(tok) == 2:
             if tok[1] in firstSet["tPrime"]:
                 if tok[1] == "*>":
@@ -618,7 +688,7 @@ class Parser:
             return
         
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __f(self) -> None:
@@ -633,6 +703,7 @@ class Parser:
 
         print("IN F")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["f"] or tok[1] in firstSet["f"]:
             if tok[1] == "(>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -657,7 +728,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __forStmt(self) -> None:
@@ -672,6 +743,7 @@ class Parser:
 
         print("IN FORSTMT")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["forStmt"]:  
             if tok[1] == "for>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -750,7 +822,7 @@ class Parser:
             return
         
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __type(self) -> None:
@@ -765,6 +837,7 @@ class Parser:
 
         print("IN TYPE")
         tok, peek_tok = self.__updateTokens()
+
         if tok[0] in firstSet["type"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
@@ -777,7 +850,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __ifStmt(self) -> None:
@@ -792,6 +865,7 @@ class Parser:
 
         print("IN IFSTMT")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["ifStmt"]:
             if tok[1] == "if>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -841,7 +915,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __optionalElse(self) -> None:
@@ -856,6 +930,7 @@ class Parser:
 
         print("IN OPTIONALELSE")
         tok, peek_tok = self.__updateTokens()
+
         if tok[1] in firstSet["optionalElse"]:
             if tok[1] == "else>":
                 self.parser_trace.append("matched <" + tok[1])
@@ -883,7 +958,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def __returnStmt(self) -> None:
@@ -919,7 +994,7 @@ class Parser:
             return
 
         else:
-            self.parser_trace.append("Parsing Error!")
+            tok, peek_tok = self.__recordingErrors(tok, peek_tok)
             return
 
     def parseToken(self) -> List[str]:
@@ -933,5 +1008,5 @@ class Parser:
         """
 
         self.__program()
-        return self.parser_trace
+        return self.parser_trace, self.error_stream
             

@@ -1,1 +1,3 @@
-int abc (float b, int c;) {}
+int abc (float b, int c;') {
+    return b + c;;
+}

@@ -1,1 +1,4 @@
-<line#>  <error_found>  
+<line#>    <error_found>                                      <error_type>        
+1          Token <punctuator;> not expected in program        Parsing             
+1          Token <char_constant'> not expected in program     Parsing             
+2          Token <punctuator;> not expected in program        Parsing             
