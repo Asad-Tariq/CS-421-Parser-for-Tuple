@@ -15,6 +15,17 @@ matched <id, 3>
 matched <+>
 matched <id, 2>
 matched <;>
+matched <id, 2>
+matched <=>
+matched <id, 3>
+matched <+>
+matched <id, 4>
+matched <;>
+matched <return>
+matched <id, 4>
+matched <*>
+matched <id, 2>
+matched <;>
 matched <}>
 Exiting abc()
 EOF

@@ -214,7 +214,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
 
         elif tok[0] in followSet["decStmts"] or tok[1] in followSet["decStmts"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -245,11 +244,9 @@ class Parser:
                 return
         
         elif tok[0] in followSet["list"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["list"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -277,11 +274,9 @@ class Parser:
                 return
         
         elif tok[0] in followSet["optionalAssign"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["optionalAssign"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -297,28 +292,24 @@ class Parser:
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-            if tok[1] == "=>":
+            if len(tok) == 2 and tok[1] == "=>":
                 self.parser_trace.append("matched <" + tok[1])
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-            if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
+            if tok[0] in firstSet["expr"]:
                 self.__expr()
                 print("IN ASSIGNSTMT")
                 tok, peek_tok = self.__updateTokens()
-            if tok[1] == ";>":
+            if len(tok) == 2 and tok[1] in firstSet["expr"]:
+                self.__expr()
+                print("IN ASSIGNSTMT")
+                tok, peek_tok = self.__updateTokens()
+            if len(tok) == 2 and tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-
-        elif tok[0] in followSet["assignStmt"]:
-            # print("matched <" + tok[0] + ">")
-            return
-
-        elif tok[1] in followSet["assignStmt"]:
-            # print("matched <" + tok[1])
-            return
 
         else:
             self.parser_trace.append("Parsing Error!")
@@ -339,11 +330,9 @@ class Parser:
                 print("IN EXPR")
 
         elif tok[0] in followSet["expr"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["expr"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -387,11 +376,9 @@ class Parser:
                     return
 
         elif tok[0][1:] in followSet["ePrime"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["ePrime"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -403,20 +390,16 @@ class Parser:
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["t"] or tok[1] in firstSet["t"]:
             if tok[0] in firstSet["f"] or tok[1] in firstSet["f"]:
-                # self.token_index += 1
-                # self.__nextToken()
                 self.__f()
                 tok, peek_tok = self.__updateTokens()
                 print("IN T")
 
             if len(tok) == 2:
                 if tok[1] in firstSet["tPrime"]:
-                    # self.__nextToken()
-                    # tok, peek_tok = self.__updateTokens()
                     self.__tPrime()
                     print("IN T")
                     tok, peek_tok = self.__updateTokens()
-
+            
             if "epsilon" in firstSet["tPrime"] and tok[0] not in firstSet["tPrime"]:
                 self.__tPrime()
                 print("IN T")
@@ -447,15 +430,29 @@ class Parser:
                 if tok[1] in firstSet["tPrime"]:
                     self.__tPrime()
                     print("IN TPRIME")
+
+        elif len(tok) == 1:
+            if tok[0][1:] in firstSet["tPrime"]:
+                if tok[0][1:] == "*>":
+                    self.parser_trace.append("matched <" + tok[0][1:])
+                    self.token_index += 1
+                    self.__nextToken()
+                    tok, peek_tok = self.__updateTokens()
+                if tok[0] in firstSet["f"]:
+                    self.__f()
+                    print("IN TPRIME")
+                    tok, peek_tok = self.__updateTokens()
+                if len(tok) == 2 and tok[1] in firstSet["tPrime"]:
+                    self.__f()
+                    print("IN TPRIME")
+                    tok, peek_tok = self.__updateTokens()
+                if tok[0][1:] in firstSet["tPrime"]:
+                    self.__tPrime()
+                    print("IN TPRIME")
                 else:
                     return
 
         elif tok[0][1:] in followSet["tPrime"]:
-            # print("matched <" + tok[0] + ">")
-            return
-        
-        elif tok[1] in followSet["tPrime"]:
-            # print("matched <" + tok[1])
             return
         
         else:
@@ -472,11 +469,8 @@ class Parser:
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
                 if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
-                    # self.token_index += 1
-                    # self.__nextToken()
                     self.__expr()
                     print("IN F")
-                    # tok, peek_tok = self.__updateTokens()
                 if tok[1] == ")>":
                     self.parser_trace.append("matched <" + tok[1])
                     self.token_index += 1
@@ -487,13 +481,11 @@ class Parser:
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-
+                
         elif tok[0] in followSet["f"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["f"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -527,21 +519,15 @@ class Parser:
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
-                # self.token_index += 1
-                # self.__nextToken()
                 self.__expr()
                 print("IN FORSTMT")
                 tok, peek_tok = self.__updateTokens()
-                # print("tok in forStmt", tok)
-                # print("peek_tok in forStmt", peek_tok)
             if tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
-                # self.token_index += 1
-                # self.__nextToken()
                 self.__expr()
                 print("IN FORSTMT")
                 tok, peek_tok = self.__updateTokens()
@@ -564,9 +550,6 @@ class Parser:
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-                # self.token_index += 1
-                # self.__nextToken()
-                # tok, peek_tok = self.__updateTokens()
             if tok[0] == "<+>" and peek_tok == "<+>":
                 self.parser_trace.append("matched " + tok[0][0:2] + peek_tok[1:2] + ">")
                 self.token_index += 1
@@ -575,8 +558,6 @@ class Parser:
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-                # print("tok in forStmt", tok)
-                # print("peek_tok in forStmt", peek_tok)
             if tok[1] == ")>":
                 self.parser_trace.append("matched <" + tok[1])
                 self.token_index += 1
@@ -587,8 +568,6 @@ class Parser:
                 self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-                # print("tok in forStmt - 2", tok)
-                # print("peek_tok in forStmt - 2", peek_tok)
             if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
                 self.__stmts()
                 print("IN FORSTMT")
@@ -600,11 +579,9 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
         
         elif tok[0] in followSet["forStmt"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["forStmt"]:
-            # print("matched <" + tok[1])
             return
         
         else:
@@ -624,7 +601,6 @@ class Parser:
                 return
 
         elif tok[0] in followSet["type"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -683,11 +659,9 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
 
         elif tok[0] in followSet["ifStmt"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif[1] in followSet["ifStmt"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -721,11 +695,9 @@ class Parser:
                 return
 
         elif tok[0] in followSet["optionalElse"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["optionalElse"]:
-            # print("matched <" + tok[1])
             return
 
         else:
@@ -752,11 +724,9 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
 
         elif tok[0] in followSet["returnStmt"]:
-            # print("matched <" + tok[0] + ">")
             return
 
         elif tok[1] in followSet["returnStmt"]:
-            # print("matched <" + tok[1])
             return
 
         else:
