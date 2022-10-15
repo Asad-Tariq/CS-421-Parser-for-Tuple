@@ -253,7 +253,6 @@ class Parser:
                 self.__pList()
         
         if tok[1] in followSet["pList"]:
-            print("here")
             return
 
         else:

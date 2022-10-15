@@ -62,7 +62,7 @@ def write_symb_tbl(symbol_table: Dict[int, str], file_num: int) -> None:
             table.write("{:<8} {:<15}\n".format(ix, entry))
 
 
-def write_error_stream(error_stream: Dict[int, List[str]], file_num: int, error_type: str) -> None:
+def write_error_stream(error_stream: Dict[int, List[str]], file_num: int, error_type: str, count: int) -> None:
     """Writes the error stream generated from the lexical analysis to a file
     of the same name as the input with the .err extension.
 
@@ -76,10 +76,18 @@ def write_error_stream(error_stream: Dict[int, List[str]], file_num: int, error_
 
     # get absolute file path
     abs_file_path = get_abs_file_path(f'ErrorStream\\test0{file_num}.err')
+
+    # determine if appending or writing
+    mode = ""
+    if count == 1:
+        mode = "w"
+    else:
+        mode = "a"
     
     # write the file
-    with open(abs_file_path, "w") as error:
-        error.write("{:<10} {:<50} {:<20}\n".format('<line#>', '<error_found>', '<error_type>'))
+    with open(abs_file_path, mode) as error:
+        if mode == "w":
+            error.write("{:<10} {:<50} {:<20}\n".format('<line#>', '<error_found>', '<error_type>'))
         for line, errors in error_stream.items():
             for err in errors:
                 error.write("{:<10} {:<50} {:<20}\n".format(line + 1, err, error_type))
@@ -166,9 +174,6 @@ def main() -> None:
     Returns:
     None.
     """ 
-    
-    # unwantd tokens for the parser
-    unwanted_tokens = {'<Comment>', '<tab>', '<blank>'}
 
     # ask user for file number
     file_num = int(input("Enter the file number: "))
@@ -203,10 +208,13 @@ def main() -> None:
     write_symb_tbl(symbol_table, file_num)
 
     # output the error stream
-    write_error_stream(error_stream, file_num, "Lexical")
+    write_error_stream(error_stream, file_num, "Lexical", 1)
+
+    # unwantd tokens for the parser
+    unwanted_tokens = {'<Comment>', '<tab>', '<blank>', '<Invalid Identifier!>', '<Invalid char constant!, \'a>'}
 
     # remove all unrequired tokens by the parser
-    token_list = [token for token in token_list if token not in unwanted_tokens]
+    token_list = [token for token in token_list if token not in unwanted_tokens and token[:9] != '<Invalid']
 
     # pass the token list to the parser
     parser = Parser(token_list, symbol_table)
@@ -218,7 +226,7 @@ def main() -> None:
     write_parser_trace(parser_trace, file_num)
 
     # output the parsing errors
-    write_error_stream(parsing_errors, file_num, "Parsing")
+    write_error_stream(parsing_errors, file_num, "Parsing", 2)
 
 # driver code
 if __name__ == "__main__":
