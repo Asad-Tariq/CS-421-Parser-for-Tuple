@@ -123,6 +123,8 @@ class Parser:
             self.error_stream[self.line_count].append(error)
         except KeyError:
             self.error_stream[self.line_count] = [error]
+        
+        # The panic recovery system
         self.__nextToken()
         tok, peek_tok = self.__updateTokens()
 
