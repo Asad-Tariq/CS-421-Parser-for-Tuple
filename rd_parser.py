@@ -1,10 +1,25 @@
 from lexer import *
 from parser_spec import *
+from typing import Dict, Tuple, List
 import re
 
-class Parser:
 
-    def __init__(self, token_list, symbol_table) -> None:
+class Parser:
+    """A recursive descent parser."""
+
+    def __init__(self, token_list: List[str], symbol_table: Dict[int, str]) -> None:
+        """Initializes the parser with the token stream from the lexer and the
+        symbol table.
+
+        Args:
+        - self: this parser, the one to create. Mandatory object reference.
+        - token_list: the token stream passed from the lexer.
+        - symbol_table: the maintained symbol table.
+
+        Returns:
+        None.
+        """
+
         self.token_list = token_list
         self.symbol_table = symbol_table
         self.token_index = 0
@@ -12,29 +27,89 @@ class Parser:
         self.current_function = ""
         self.parser_trace = []
 
-    def __updateTokens(self):
+    def __checkToken(self) -> List[str]:
+        """Returns the lexical unit and attribute of the current token.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        A split representation of the current token.
+        """
+
+        return self.current_token.split(", ")
+
+    def __peekToken(self) -> str:
+        """Returns the lookahead token. If the token stream has been parsed then
+        the End of Stream token is returned.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        The lookahead token.
+        """
+
+        if self.token_index + 1 >= len(self.token_list):
+            return "<$>"  # EOS token
+        return self.token_list[self.token_index + 1]  
+
+    def __nextToken(self) -> None:
+        """Updates the current token.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        The lookahead token.
+        """
+
+        # increment pointer
+        self.token_index += 1
+
+        # upadate token if within bounds
+        if self.token_index < len(self.token_list):
+            self.current_token = self.token_list[self.token_index]
+
+    def __updateTokens(self) -> Tuple[List[str], str]:
+        """Returns the lexical unit and attribute of the current token in 
+        addition to, the lookahead
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         tok = self.__checkToken()
         peek_tok = self.__peekToken()
         return tok, peek_tok
 
-    def __program(self):
+    def __program(self) -> None:
+        """The production rules for the 'Program' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN PROGRAM")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["program"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
                 self.current_function = tok[1]
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "(>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["paramList"]:
@@ -43,12 +118,10 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ")>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "{>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
                 self.parser_trace.append("In " + re.search("(.+?),", self.symbol_table[int(self.current_function[:-1])]).group(1) + "()")
@@ -58,7 +131,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "}>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
                 self.parser_trace.append("Exiting " + re.search("(.+?),", self.symbol_table[int(self.current_function[:-1])]).group(1) + "()")
@@ -74,18 +146,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __paramList(self):
+    def __paramList(self) -> None:
+        """The production rules for the 'ParamList' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN PARAMLIST")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["paramList"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] in firstSet["pList"]:
@@ -100,23 +179,29 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __pList(self):
+    def __pList(self) -> None:
+        """The production rules for the 'PList' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN PLIST")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["pList"]:
             if tok[1] == ",>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] in firstSet["pList"]:
@@ -129,7 +214,16 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __stmts(self):
+    def __stmts(self) -> None:
+        """The production rules for the 'Stmts' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN STMTS")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
@@ -143,7 +237,7 @@ class Parser:
         
         elif tok[1] in followSet["stmts"]:
             self.parser_trace.append("matched <" + tok[1])
-            self.token_index += 1
+            
             self.__nextToken()
             print("IN STMTS")
         
@@ -156,7 +250,16 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __stmtsPrime(self):
+    def __stmtsPrime(self) -> None:
+        """The production rules for the "Stmts'" non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN STMTSPRIME")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["stmtsPrime"] or tok[1] in firstSet["stmtsPrime"]:
@@ -190,18 +293,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __decStmt(self):
+    def __decStmt(self) -> None:
+        """The production rules for the 'DecStmts' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN DECSTMT")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["decStmts"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] in firstSet["optionalAssign"]:
@@ -220,18 +330,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __list(self):
+    def __list(self) -> None:
+        """The production rules for the 'List' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN LIST")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["list"]:
             if tok[1] == ",>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] in firstSet["optionalAssign"]:
@@ -253,12 +370,20 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __optionalAssign(self):
+    def __optionalAssign(self) -> None:
+        """The production rules for the 'OptionalAssign' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN OPTIONALASSIGN")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["optionalAssign"]:
             self.parser_trace.append("matched <" + tok[1])
-            self.token_index += 1
             self.__nextToken()
             tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -267,7 +392,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             else:
@@ -283,18 +407,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __assignStmt(self):
+    def __assignStmt(self) -> None:
+        """The production rules for the 'AssignStmt' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN ASSIGNSTMT")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["assignStmt"]:
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if len(tok) == 2 and tok[1] == "=>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"]:
@@ -307,7 +438,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if len(tok) == 2 and tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
 
@@ -315,7 +445,16 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __expr(self):
+    def __expr(self) -> None:
+        """The production rules for the 'Expr' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN EXPR")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -339,14 +478,22 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __ePrime(self):
+    def __ePrime(self) -> None:
+        """The production rules for the "Expr'" non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN EPRIME")
         tok, peek_tok = self.__updateTokens()
         if len(tok) == 1:
             if tok[0][1:] in firstSet["ePrime"]:
                 if tok[0][1:] == "+>":
                     self.parser_trace.append("matched <" + tok[0][1:])
-                    self.token_index += 1
                     self.__nextToken()
                     tok, peek_tok = self.__updateTokens()
                 if tok[0][1:] in firstSet["t"] or tok[0] in firstSet["t"]:
@@ -363,7 +510,6 @@ class Parser:
             if tok[0] in firstSet["ePrime"]:
                 if tok[0] == "+>":
                     self.parser_trace.append("matched <" + tok[0][1:])
-                    self.token_index += 1
                     self.__nextToken()
                     tok, peek_tok = self.__updateTokens()
                 if tok[0] in firstSet["t"]:
@@ -385,7 +531,16 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __t(self):
+    def __t(self) -> None:
+        """The production rules for the 'T' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN T")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["t"] or tok[1] in firstSet["t"]:
@@ -414,14 +569,22 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __tPrime(self):
+    def __tPrime(self) -> None:
+        """The production rules for the "T'" non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN TPRIME")
         tok, peek_tok = self.__updateTokens()
         if len(tok) == 2:
             if tok[1] in firstSet["tPrime"]:
                 if tok[1] == "*>":
                     self.parser_trace.append("matched <" + tok[1])
-                    self.token_index += 1
                     self.__nextToken()
                 if tok[0] in firstSet["f"] or tok[1] in firstSet["f"]:
                     self.__f()
@@ -435,7 +598,6 @@ class Parser:
             if tok[0][1:] in firstSet["tPrime"]:
                 if tok[0][1:] == "*>":
                     self.parser_trace.append("matched <" + tok[0][1:])
-                    self.token_index += 1
                     self.__nextToken()
                     tok, peek_tok = self.__updateTokens()
                 if tok[0] in firstSet["f"]:
@@ -459,13 +621,21 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __f(self):
+    def __f(self) -> None:
+        """The production rules for the 'F' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN F")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["f"] or tok[1] in firstSet["f"]:
             if tok[1] == "(>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
                 if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -473,12 +643,10 @@ class Parser:
                     print("IN F")
                 if tok[1] == ")>":
                     self.parser_trace.append("matched <" + tok[1])
-                    self.token_index += 1
                     self.__nextToken()
                     tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
                 
@@ -492,18 +660,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __forStmt(self):
+    def __forStmt(self) -> None:
+        """The production rules for the 'ForStmt' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN FORSTMT")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["forStmt"]:  
             if tok[1] == "for>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "(>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["type"]:
@@ -515,7 +690,6 @@ class Parser:
                 print("IN FORSTMT")
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -524,7 +698,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -533,7 +706,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<rel_op":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -542,30 +714,24 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<id":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<+>" and peek_tok == "<+>":
                 self.parser_trace.append("matched " + tok[0][0:2] + peek_tok[1:2] + ">")
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ")>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "{>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
@@ -574,7 +740,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "}>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
         
@@ -588,13 +753,21 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __type(self):
+    def __type(self) -> None:
+        """The production rules for the 'Type' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN TYPE")
         tok, peek_tok = self.__updateTokens()
         if tok[0] in firstSet["type"]:
             if tok[0] == "<dt":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             else:
@@ -607,18 +780,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __ifStmt(self):
+    def __ifStmt(self) -> None:
+        """The production rules for the 'IfStmt' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN IFSTMT")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["ifStmt"]:
             if tok[1] == "if>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "(>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -627,7 +807,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[0] == "<rel_op":
                 self.parser_trace.append("matched " + tok[0] + ", " + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -636,12 +815,10 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ")>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "{>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
@@ -650,7 +827,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "}>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] in firstSet["optionalElse"]:
@@ -668,18 +844,25 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __optionalElse(self):
+    def __optionalElse(self) -> None:
+        """The production rules for the 'OptionalElse' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN OPTIONALELSE")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["optionalElse"]:
             if tok[1] == "else>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "{>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["stmts"] or tok[1] in firstSet["stmts"]:
@@ -688,7 +871,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == "}>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             else:
@@ -704,13 +886,21 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
-    def __returnStmt(self):
+    def __returnStmt(self) -> None:
+        """The production rules for the 'ReturnStmt' non-terminal.
+
+        Args:
+        - self: mandatory object reference.
+
+        Returns:
+        None.
+        """
+
         print("IN RETURNSTMT")
         tok, peek_tok = self.__updateTokens()
         if tok[1] in firstSet["returnStmt"]:
             if tok[1] == "return>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
             if tok[0] in firstSet["expr"] or tok[1] in firstSet["expr"]:
@@ -719,7 +909,6 @@ class Parser:
                 tok, peek_tok = self.__updateTokens()
             if tok[1] == ";>":
                 self.parser_trace.append("matched <" + tok[1])
-                self.token_index += 1
                 self.__nextToken()
                 tok, peek_tok = self.__updateTokens()
 
@@ -733,19 +922,16 @@ class Parser:
             self.parser_trace.append("Parsing Error!")
             return
 
+    def parseToken(self) -> List[str]:
+        """Public method that instigates the parsing.
 
-    def __checkToken(self):
-        return self.current_token.split(", ")
+        Args:
+        - self: mandatory object reference.
 
-    def parseToken(self):
+        Returns:
+        The output of the parser in the form of a trace of the syntax analysis.
+        """
+
         self.__program()
         return self.parser_trace
-
-    def __peekToken(self):
-        if self.token_index + 1 >= len(self.token_list):
-            return "<$>"
-        return self.token_list[self.token_index + 1]
-
-    def __nextToken(self):
-        if self.token_index < len(self.token_list):
-            self.current_token = self.token_list[self.token_index]
+            
