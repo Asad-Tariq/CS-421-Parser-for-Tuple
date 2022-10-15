@@ -135,6 +135,24 @@ def tokenize(lexer: Lexer, symbol_table: Dict[int, str], symbol_count: int,
     return symbol_count, symbol_table, token_list
 
 
+def write_parser_trace(parser_stream: List[str], file_num: int) -> None:
+    """Writes the parser trace to a file.
+
+    Args:
+    - parser_stream: the trace of the parser.
+
+    Returns:
+    None.
+    """
+
+    # get absolute file path
+    abs_file_path = get_abs_file_path(f'ParserTrace\\test0{file_num}.tr')
+    
+    # write the file
+    with open(abs_file_path, "w") as trace:
+        trace.write('\n'.join(parser_stream))
+
+
 def main() -> None:
     """Program entry point. Reads the indicated test file line by line, passing
     each line to the lexer which tokenizes the given stream in addition to,
@@ -193,7 +211,12 @@ def main() -> None:
 
     # pass the token list to the parser
     parser = Parser(token_list, symbol_table)
-    parser.parseToken()
+    
+    # obtain the parser trace from the parser class after parsing all tokens
+    parser_trace = parser.parseToken()
+
+    # output the parser trace
+    write_parser_trace(parser_trace, file_num)
 
 # driver code
 if __name__ == "__main__":

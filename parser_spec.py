@@ -1,6 +1,6 @@
 firstSet = {"program":{"<dt"},
         "paramList":{"<dt"},
-        "pList":{",>"},
+        "pList":{",>", "epsilon"},
         "stmts":{"<dt", "<id", "for>", "if>", "return>", "epsilon"},
         "stmtsPrime":{"<dt", "<id", "for>", "if>", "return>", "epsilon"},
         "decStmts":{"<dt"},
