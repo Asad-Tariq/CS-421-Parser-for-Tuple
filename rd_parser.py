@@ -118,7 +118,7 @@ class Parser:
         """
 
         self.parser_trace.append("Parsing Error!")
-        error = "Token " + tok[0] + tok[1] + " not expected in program"
+        error = "Token " + tok[0] + ", " + tok[1] + " not expected in program"
         try:
             self.error_stream[self.line_count].append(error)
         except KeyError:
@@ -142,6 +142,7 @@ class Parser:
 
         print("IN PROGRAM")
         tok, peek_tok = self.__updateTokens()
+        print(tok, peek_tok)
 
         if tok[0] in firstSet["program"]:
             if tok[0] == "<dt":
@@ -183,13 +184,13 @@ class Parser:
                 self.parser_trace.append("EOF")
                 return
             
-        elif tok in followSet["program"] or peek_tok in followSet["program"]:
+        if tok[0] in followSet["program"] or peek_tok in followSet["program"]:
             self.parser_trace.append("EOF")
             return
 
-        elif tok[0] not in firstSet["program"] or tok[1] not in firstSet["program"]:
+        if tok[0] not in firstSet["program"] or tok[1] not in firstSet["program"]:
             tok, peek_tok = self.__recordingErrors(tok, peek_tok)
-            return
+            self.__program()
 
     def __paramList(self) -> None:
         """The production rules for the 'ParamList' non-terminal.
